@@ -1,18 +1,20 @@
 import { gql, useQuery } from "@apollo/client";
-import { Picker } from "@react-native-picker/picker";
 import { Image } from "expo-image";
 import { useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
+  SafeAreaView,
+  StatusBar,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  View,
+  View
 } from "react-native";
 import ModalDetails from "../../components/ModalDetails";
 
+import CustomPicker from "../../components/CustomPicker";
 const GET_CHARACTERS = gql`
   query GetCharacters($page: Int!, $filter: FilterCharacter) {
     characters(page: $page, filter: $filter) {
@@ -74,6 +76,29 @@ export default function HomeScreen() {
   const [selectedCharacter, setSelectedCharacter] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [order, setOrder] = useState("NONE");
+  const options = [
+    { label: 'NONE', value: 'NONE' },
+    { label: 'ASC', value: 'ASC' },
+    { label: 'DESC', value: 'DESC' },
+  ];
+  const options2=[
+   {label:"All" ,value:""},
+         {label:"Human", value:"Human" },
+            {label:"Alien" ,value:"Alien" },
+            { label:"Humanoid" ,value:"Humanoid" },
+           {label:"Poopybutthole" ,value:"Poopybutthole" },
+            {
+              label:"Mythological Creature"
+              ,value:"Mythological Creature"
+            },
+            { label:"Animal" ,value:"Animal" }
+  ]
+  const options3=[
+    {label:"All", value:"" },
+            {label:"Alive" ,value:"Alive" },
+            {label:"Dead" ,value:"Dead" },
+            {label:"unknown" ,value:"unknown" }
+  ]
   const loadMoreCharacters = async () => {
     if (data) {
       if (!data.characters.info.next || isLoadingMore) return;
@@ -120,6 +145,12 @@ export default function HomeScreen() {
       },
     });
   };
+  const getValueToSpecies=(value)=>{
+applyFilter({ ...filter, species: value })
+  }
+  const getValueToStatus=(value)=>{
+applyFilter({ ...filter, status: value })
+  }
 
   const sortAlphabetic = (data, order) => {
     if (data && data.length > 0) {
@@ -146,6 +177,13 @@ export default function HomeScreen() {
     );
   const header = (
     <View>
+      <StatusBar backgroundColor="green"/>
+      <SafeAreaView
+        style={{
+          flex: 0,
+          backgroundColor: "green",
+        }}
+      />
       <ModalDetails
         modalVisible={modalVisible}
         setModalVisible={setModalVisible}
@@ -168,44 +206,37 @@ export default function HomeScreen() {
           margin: 7,
         }}
       >
-        <View
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <TextInput
-            placeholder="Search by name"
-            value={filter.name}
-            onChangeText={(text) => {
-              const updatedFilter = { ...filter, name: text };
+      <View style={{ flexDirection:"row", 
+         alignItems:"center", justifyContent:"center"}}>
+  <TextInput
+    placeholder="Search by name"
+    value={filter.name}
+    onChangeText={(text) => {
+      const updatedFilter = { ...filter, name: text };
+      applyFilter(updatedFilter);
+    }}
+    style={{
+      height: 40,
+      borderColor: "gray",
+      borderWidth: 1,
+      marginBottom: 10,
+      paddingHorizontal: 10,
+      borderRadius: 8,
+      marginHorizontal:5, width:"50%"
+    }}
+  />
 
-              applyFilter(updatedFilter);
-            }}
-            style={{
-              height: 40,
-              borderColor: "gray",
-              borderWidth: 3,
-              marginVertical: 7,
-            }}
-          />
-          <Picker
-            selectedValue={order}
-            onValueChange={(value) => setOrder(value)}
-            style={{
-              height: 40,
-              width: 100,
-              borderColor: "gray",
-              borderWidth: 3,
-              fontSize: 16,
-            }}
-          >
-            <Picker.Item label="NONE" value="NONE" />
-            <Picker.Item label="ASC" value="ASC" />
-            <Picker.Item label="DESC" value="DESC" />
-          </Picker>
-        </View>
+ 
+      <CustomPicker
+        options={options}
+        selectedValue={order}
+        onValueChange={setOrder}
+        //label="Ordenar por"
+      />
+   
+ 
+</View>
+
 
         <View
           style={{
@@ -219,50 +250,25 @@ export default function HomeScreen() {
           >
             Specie:{" "}
           </Text>
-          <Picker
-            selectedValue={filter.species}
-            onValueChange={(value) =>
-              applyFilter({ ...filter, species: value })
-            }
-            style={{
-              height: 40,
-              width: 100,
-              borderColor: "gray",
-              borderWidth: 3,
-              fontSize: 16,
-            }}
-          >
-            <Picker.Item label="All" value="" />
-            <Picker.Item label="Human" value="Human" />
-            <Picker.Item label="Alien" value="Alien" />
-            <Picker.Item label="Humanoid" value="Humanoid" />
-            <Picker.Item label="Poopybutthole" value="Poopybutthole" />
-            <Picker.Item
-              label="Mythological Creature"
-              value="Mythological Creature"
-            />
-            <Picker.Item label="Animal" value="Animal" />
-          </Picker>
+          <CustomPicker
+        options={options2}
+        selectedValue={filter.species }
+        onValueChange={getValueToSpecies}
+        
+      />
+          
           <Text
             style={{ fontWeight: "bold", fontSize: 18, paddingHorizontal: 8 }}
           >
             Status:{" "}
           </Text>
-          <Picker
-            style={{
-              height: 40,
-              borderColor: "gray",
-              borderWidth: 3,
-              fontSize: 16,
-            }}
-            selectedValue={filter.status}
-            onValueChange={(value) => applyFilter({ ...filter, status: value })}
-          >
-            <Picker.Item label="All" value="" />
-            <Picker.Item label="Alive" value="Alive" />
-            <Picker.Item label="Dead" value="Dead" />
-            <Picker.Item label="unknown" value="unknown" />
-          </Picker>
+           <CustomPicker
+        options={options3}
+        selectedValue={filter.status }
+        onValueChange={getValueToStatus}
+        
+      />
+          
         </View>
       </View>
     </View>
@@ -382,6 +388,6 @@ const styles = StyleSheet.create({
   imageCharacter: {
     width: "100%",
     aspectRatio: 1,
-    resizeMode: "cover",
+    contentFit: "cover",
   },
 });

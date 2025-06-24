@@ -1,110 +1,246 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
 
-import { Collapsible } from '@/components/Collapsible';
-import { ExternalLink } from '@/components/ExternalLink';
-import ParallaxScrollView from '@/components/ParallaxScrollView';
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
-import { IconSymbol } from '@/components/ui/IconSymbol';
+import { gql, useQuery } from "@apollo/client";
+import { Image } from "expo-image";
+import { useState } from "react";
+import {
+  ActivityIndicator,
+  FlatList,
+  SafeAreaView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
+} from "react-native";
+import ModalDetails2 from "../../components/ModalDetails2";
+
+
+export const  GET_EPISODES = gql`
+  query GetEpisodes($page: Int!) {
+    episodes(page: $page) {
+      info {
+        next
+      }
+      results {
+        id
+        name
+        air_date
+        episode
+        characters {
+          id
+          name
+          species
+        image
+        status
+        }
+      }
+    }
+  }
+`;
 
 export default function TabTwoScreen() {
+    const { loading, error, data, fetchMore, refetch } = useQuery(
+      GET_EPISODES,
+      {
+        variables: {
+          page: 1,
+        },
+        onCompleted: (data) => {
+          setEpisodes(data.episodes.results);
+        },
+      }
+    );
+    const [page, setPage] = useState(1);
+    const [episodes, setEpisodes] = useState([]);
+    const [isLoadingMore, setIsLoadingMore] = useState(false);
+    const [selectedepisode, setSelectedEpisode] = useState(null);
+    const [modalVisible, setModalVisible] = useState(false);
+  const loadMoreEpisodes = async () => {
+  if (data) {
+    //const nextPage = data.episodes.info.next;
+  console.log(data.episodes.info)
+  console.log(page)
+    if (page>data.episodes.info.next || isLoadingMore) return;
+const nextPage = page + 1;
+      setPage(nextPage);
+    setIsLoadingMore(true);
+console.log(nextPage)
+    try {
+      const response = await fetchMore({
+        variables: { page: nextPage },
+      });
+
+      setEpisodes((prev) => [...prev, ...response.data.episodes.results]);
+    } catch (err) {
+      console.error("Error al hacer fetchMore:", err);
+    }
+
+    setIsLoadingMore(false);
+  }
+};
+
+   const header = (
+        <View>
+          <StatusBar backgroundColor="green"/>
+          <SafeAreaView
+            style={{
+              flex: 0,
+              backgroundColor: "green",
+            }}
+          />
+          <ModalDetails2
+            modalVisible={modalVisible}
+            setModalVisible={setModalVisible}
+            selectedepisode={selectedepisode}
+          />
+          <View>
+            <Image
+              source={require("@/assets/images/rick-an-morty-episodes.avif")}
+              style={styles.reactLogo}
+            />
+            <View style={styles.containerTitle}>
+              <Text style={styles.title}>EPISODES LIST</Text>
+            </View>
+          </View>
+ 
+        </View>
+      );
+
+      
+      
+if (error)
+    return (
+      <View
+        style={{
+          padding: 40,
+          alignItems: "center",
+          justifyContent: "center",
+          flex: 1,
+        }}
+      >
+        <Text style={{ color: "red", fontWeight: "bold" }}>
+          Error: {error.message}
+        </Text>
+      </View>
+    );
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#D0D0D0', dark: '#353636' }}
-      headerImage={
-        <IconSymbol
-          size={310}
-          color="#808080"
-          name="chevron.left.forwardslash.chevron.right"
-          style={styles.headerImage}
+    
+     
+      
+        <FlatList
+          ListHeaderComponent={header}
+          data={episodes || []}
+          keyExtractor={(item) => item.id}
+          numColumns={2}
+          style={{marginBottom:100}}
+          renderItem={({ item }) => (
+            <>
+              {loading ? (
+                <View
+                  style={{
+                    padding: 40,
+                    alignItems: "center",
+                    justifyContent: "center",
+                    flex: 1,
+                  }}
+                >
+                  <ActivityIndicator size="large" color="#000" />
+                  <Text>Loading...</Text>
+                </View>
+              ) : (
+                <>
+                  {episodes && episodes.length > 0 && (
+                    <View style={styles.container}>
+               
+    
+                      <Text style={{ fontSize: 18, fontWeight: "bold", paddingBottom:10 }}>
+                        {item.name.toUpperCase()}
+                      </Text>
+                      <Text style={{ fontSize: 18,marginBottom:10 }}>{item.air_date}</Text>
+                      <TouchableOpacity
+                        onPress={() => {
+                          setSelectedEpisode(item); // Guarda toda la data
+                          setModalVisible(true); // Muestra el modal
+                        }}
+                        style={{
+                          padding: 10,
+                          backgroundColor: "orange",
+                          borderRadius: 5,
+                        }}
+                      >
+                        <Text
+                          style={{
+                            color: "#fff",
+                            fontWeight: "bold",
+                            fontSize: 17,
+                            
+                          }}
+                        >
+                          Learn more
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
+                  )}
+                </>
+              )}
+            </>
+          )}
+          onEndReached={loadMoreEpisodes}
+          onEndReachedThreshold={0.5}
+          ListFooterComponent={
+            <>{isLoadingMore && <ActivityIndicator size="large" color="#000" />}</>
+          }
         />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Explore</ThemedText>
-      </ThemedView>
-      <ThemedText>This app includes example code to help you get started.</ThemedText>
-      <Collapsible title="File-based routing">
-        <ThemedText>
-          This app has two screens:{' '}
-          <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> and{' '}
-          <ThemedText type="defaultSemiBold">app/(tabs)/explore.tsx</ThemedText>
-        </ThemedText>
-        <ThemedText>
-          The layout file in <ThemedText type="defaultSemiBold">app/(tabs)/_layout.tsx</ThemedText>{' '}
-          sets up the tab navigator.
-        </ThemedText>
-        <ExternalLink href="https://docs.expo.dev/router/introduction">
-          <ThemedText type="link">Learn more</ThemedText>
-        </ExternalLink>
-      </Collapsible>
-      <Collapsible title="Android, iOS, and web support">
-        <ThemedText>
-          You can open this project on Android, iOS, and the web. To open the web version, press{' '}
-          <ThemedText type="defaultSemiBold">w</ThemedText> in the terminal running this project.
-        </ThemedText>
-      </Collapsible>
-      <Collapsible title="Images">
-        <ThemedText>
-          For static images, you can use the <ThemedText type="defaultSemiBold">@2x</ThemedText> and{' '}
-          <ThemedText type="defaultSemiBold">@3x</ThemedText> suffixes to provide files for
-          different screen densities
-        </ThemedText>
-        <Image source={require('@/assets/images/react-logo.png')} style={{ alignSelf: 'center' }} />
-        <ExternalLink href="https://reactnative.dev/docs/images">
-          <ThemedText type="link">Learn more</ThemedText>
-        </ExternalLink>
-      </Collapsible>
-      <Collapsible title="Custom fonts">
-        <ThemedText>
-          Open <ThemedText type="defaultSemiBold">app/_layout.tsx</ThemedText> to see how to load{' '}
-          <ThemedText style={{ fontFamily: 'SpaceMono' }}>
-            custom fonts such as this one.
-          </ThemedText>
-        </ThemedText>
-        <ExternalLink href="https://docs.expo.dev/versions/latest/sdk/font">
-          <ThemedText type="link">Learn more</ThemedText>
-        </ExternalLink>
-      </Collapsible>
-      <Collapsible title="Light and dark mode components">
-        <ThemedText>
-          This template has light and dark mode support. The{' '}
-          <ThemedText type="defaultSemiBold">useColorScheme()</ThemedText> hook lets you inspect
-          what the user&apos;s current color scheme is, and so you can adjust UI colors accordingly.
-        </ThemedText>
-        <ExternalLink href="https://docs.expo.dev/develop/user-interface/color-themes/">
-          <ThemedText type="link">Learn more</ThemedText>
-        </ExternalLink>
-      </Collapsible>
-      <Collapsible title="Animations">
-        <ThemedText>
-          This template includes an example of an animated component. The{' '}
-          <ThemedText type="defaultSemiBold">components/HelloWave.tsx</ThemedText> component uses
-          the powerful <ThemedText type="defaultSemiBold">react-native-reanimated</ThemedText>{' '}
-          library to create a waving hand animation.
-        </ThemedText>
-        {Platform.select({
-          ios: (
-            <ThemedText>
-              The <ThemedText type="defaultSemiBold">components/ParallaxScrollView.tsx</ThemedText>{' '}
-              component provides a parallax effect for the header image.
-            </ThemedText>
-          ),
-        })}
-      </Collapsible>
-    </ParallaxScrollView>
   );
 }
-
 const styles = StyleSheet.create({
-  headerImage: {
-    color: '#808080',
-    bottom: -90,
-    left: -35,
-    position: 'absolute',
-  },
   titleContainer: {
-    flexDirection: 'row',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 8,
+  },
+  stepContainer: {
+    gap: 8,
+    marginBottom: 8,
+  },
+  reactLogo: {
+    height: 100,
+    width: "100%",
+    bottom: 0,
+    left: 0,
+    position: "relative",
+  },
+  title: {
+    fontWeight: "bold",
+    fontSize: 20,
+    color: "#fff",
+  },
+  containerTitle: {
+    position: "absolute",
+    top: "50%",
+    left: "50%",
+    transform: [{ translateX: -100 }, { translateY: -25 }],
+
+    backgroundColor: "rgba(128, 128, 128, 0.8)",
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 10,
+    padding: 5,
+  },
+
+  container: {
+    flex: 1,
+    margin: 10,
+    padding: 10,
+    backgroundColor: "#fff",
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent:"center", alignItems:"center",
+    
+  },
+  imageCharacter: {
+    width: "100%",
+    aspectRatio: 1,
+    contentFit: "cover",
   },
 });

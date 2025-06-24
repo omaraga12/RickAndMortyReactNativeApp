@@ -9,15 +9,25 @@ import {
   View
 } from "react-native";
 
+export default function ModalDetails2(props) {
+  const { modalVisible, setModalVisible, selectedepisode } = props;
 
-export default function ModalDetails(props) {
-  const { modalVisible, setModalVisible, selectedCharacter } = props;
-
-  const EpisodeCard = ({ episode }) => (
+  const EpisodeCard = ({ character }) => (
     <View style={styles.episodeCard}>
-      <Text style={styles.episodeName}>{episode.name}</Text>
-      <Text style={styles.episodeCode}>{episode.episode}</Text>
-      <Text style={styles.episodeDate}>{episode.air_date}</Text>
+     
+      <Image
+                          source={{ uri: character.image }}
+                          style={styles.imageCharacter}
+                        />
+      <Text style={styles.episodeName}>{character.name.toUpperCase()}</Text>
+      <Text style={{ fontSize: 14 }}>
+              <Text style={{ fontWeight: "bold" }}> Species:</Text>{" "}
+              {character?.species}
+            </Text>
+            <Text style={{ fontSize: 14}}>
+              <Text style={{ fontWeight: "bold" }}> Status: </Text>{" "}
+              {character?.status}
+            </Text>
     </View>
   );
   return (
@@ -38,34 +48,23 @@ export default function ModalDetails(props) {
         </Pressable>
         <View style={styles.modalContent}>
           <ScrollView>
-            <View style={{ alignItems: "center", justifyContent: "center" }}>
-              <Image
-                source={{ uri: selectedCharacter?.image }}
-                style={styles.modalImage}
-              />
-            </View>
+
 
             <View style={{ backgroundColor: "#FFC300", borderRadius: 4 }}>
               <Text style={styles.modalName}>
-                {selectedCharacter?.name.toUpperCase()}
+                {selectedepisode?.name.toUpperCase()}
               </Text>
             </View>
 
             <Text style={{ fontSize: 16 }}>
-              <Text style={{ fontWeight: "bold" }}> Species:</Text>{" "}
-              {selectedCharacter?.species}
+              <Text style={{ fontWeight: "bold" }}> AIR DATE:</Text>{" "}
+              {selectedepisode?.air_date}
             </Text>
+    
+          
             <Text style={{ fontSize: 16 }}>
-              <Text style={{ fontWeight: "bold" }}> Status: </Text>{" "}
-              {selectedCharacter?.status}
-            </Text>
-            <Text style={{ fontSize: 16 }}>
-              <Text style={{ fontWeight: "bold" }}> Gender:</Text>{" "}
-              {selectedCharacter?.gender}
-            </Text>
-            <Text style={{ fontSize: 16 }}>
-              <Text style={{ fontWeight: "bold" }}> Location:</Text>{" "}
-              {selectedCharacter?.location.name}
+              <Text style={{ fontWeight: "bold" }}> CODE:</Text>{" "}
+              {selectedepisode?.episode}
             </Text>
             <View
               style={{
@@ -77,15 +76,15 @@ export default function ModalDetails(props) {
               }}
             >
               <Text style={{ fontSize: 20, fontWeight: "bold", color: "#fff" }}>
-                Episodes
+                CHARACTERS
               </Text>
             </View>
 
             <FlatList
-              data={selectedCharacter?.episode}
+              data={selectedepisode?.characters}
               keyExtractor={(item, index) => index.toString()}
               numColumns={2}
-              renderItem={({ item }) => <EpisodeCard episode={item} />}
+              renderItem={({ item }) => <EpisodeCard character={item} />}
               columnWrapperStyle={{ justifyContent: "space-between" }}
               contentContainerStyle={{ paddingVertical: 10 }}
               scrollEnabled={false} 
@@ -148,8 +147,9 @@ const styles = StyleSheet.create({
   },
   episodeName: {
     fontWeight: "bold",
-    fontSize: 12,
+    fontSize: 14,
     textAlign: "center",
+    paddingVertical:5
   },
   episodeCode: {
     fontSize: 11,
@@ -158,5 +158,10 @@ const styles = StyleSheet.create({
   episodeDate: {
     fontSize: 10,
     color: "#999",
+  },
+  imageCharacter: {
+    width: "100%",
+    aspectRatio: 1,
+    contentFit: "cover",
   },
 });
